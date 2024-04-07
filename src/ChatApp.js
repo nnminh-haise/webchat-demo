@@ -13,8 +13,9 @@ const ChatPage = () => {
 
   useEffect(() => {
     socket.on('receive-message', (data) => {
-      const incomingMessage = data.payload.message;
-      const sender = data.payload.sender;
+      const incomingMessage = data.message;
+      const sender = data.sender;
+      // const roomId = data.roomId;
       setMessages((prevMessages) => [...prevMessages, { text: incomingMessage, sender: sender }]);
     });
 
@@ -26,14 +27,24 @@ const ChatPage = () => {
   const handleMessageSend = () => {
     if (messageInput.trim() === '') return;
 
-    socket.emit('send-message', { payload: { message: messageInput, sender: username, roomId: roomId } });
+    socket.emit('send-message', {
+        roomId: roomId,
+        sender: username,
+        message: messageInput,
+      }
+    );
 
     setMessages((prevMessages) => [...prevMessages, { text: messageInput, sender: 'self' }]);
     setMessageInput('');
   };
 
   const handleRoomJoin = () => {
-    console.log(`Joined room: ${roomId}`);
+    if (roomId === '') return;
+
+    socket.emit('join-room', {
+      roomId: roomId,
+      username: username,
+    });
   };
 
   return (
