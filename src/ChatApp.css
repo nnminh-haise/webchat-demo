@@ -1,48 +1,84 @@
+/* ChatPage.css */
 .chat-container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: calc(100vw / 3);
+  height: 80vh;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
 }
 
-.chat-messages {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
+.header {
+  width: 100%;
+  background-color: #f0f0f0;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.message-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  width: 100%;
+}
+
+.input-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 10px 0; /* Add padding to top and bottom */
+}
+
+.input-container input[type="text"] {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.input-container button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.input-container button:hover {
+  background-color: #0056b3;
 }
 
 .message {
-    margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
-.chat-input {
-    display: flex;
-    flex-direction: column;
+.own-message {
+  /* width: 100%; */
+  border-radius: 8px;
+  padding: 15px 20px; /* Increase padding */
+  font-size: 18px; /* Increase font size */
+  margin-left: auto; /* Align own messages to the right */
+  text-align: right; /* Align text to the right */
 }
 
-.chat-input input,
-.chat-input textarea {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+.other-message {
+  border-radius: 8px;
+  padding: 15px 20px; /* Increase padding */
+  font-size: 18px; /* Increase font size */
+  margin-right: auto; /* Align other messages to the left */
+  text-align: left; /* Align text to the right */
 }
 
-.chat-input button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+.other-message {
+  background-color: #f0f0f0;
 }
 
-.chat-input button:hover {
-    background-color: #0056b3;
+/* Hide user's name */
+.message-sender {
+  display: none;
 }

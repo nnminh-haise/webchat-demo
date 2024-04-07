@@ -1,60 +1,76 @@
+// ChatPage.js
 import React, { useState, useEffect } from 'react';
-import io from 'socket.io-client';
 import './ChatApp.css';
+import io from 'socket.io-client';
 
-const socket = io('localhost:8080');
+const socket = io('http://localhost:8080'); // Replace with your server URL
 
-function ChatApp() {
-    const [userId, setUserId] = useState('');
-    const [message, setMessage] = useState('');
-    const [incomingMessages, setIncomingMessages] = useState([]);
+const ChatPage = () => {
+  const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState('');
+  const [username, setUsername] = useState('');
+  const [roomId, setRoomId] = useState('');
 
-    useEffect(() => {
-        // Listen for 'chat' event from backend
-        socket.on('message', (message) => {
-            setIncomingMessages([...incomingMessages, message]);
-        });
+  useEffect(() => {
+    socket.on('receive-message', (data) => {
+      const incomingMessage = data.payload.message;
+      const sender = data.payload.sender;
+      setMessages((prevMessages) => [...prevMessages, { text: incomingMessage, sender: sender }]);
+    });
 
-        // Clean up listener when component unmounts
-        return () => {
-            socket.off('chat');
-        };
-    }, [incomingMessages]);
-
-    const sendMessage = () => {
-        if (userId && message) {
-            // console.log("send");
-            // console.log("sending message: ", message);
-            socket.emit('chat', { userId, message });
-            setMessage('');
-        }
+    return () => {
+      socket.off('receive-message');
     };
+  }, []);
 
-    return (
-        <div className="chat-container">
-            <div className="chat-messages">
-                {incomingMessages.map((msg, index) => (
-                    <div className="message" key={index}>
-                        <strong>{msg.userId}:</strong> {msg.message}
-                    </div>
-                ))}
-            </div>
-            <div className="chat-input">
-                <input
-                    type="text"
-                    placeholder="Your Name"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                />
-                <textarea
-                    placeholder="Type your message here..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                ></textarea>
-                <button onClick={sendMessage}>Send</button>
-            </div>
-        </div>
-    );
-}
+  const handleMessageSend = () => {
+    if (messageInput.trim() === '') return;
 
-export default ChatApp;
+    socket.emit('send-message', { payload: { message: messageInput, sender: username, roomId: roomId } });
+
+    setMessages((prevMessages) => [...prevMessages, { text: messageInput, sender: 'self' }]);
+    setMessageInput('');
+  };
+
+  const handleRoomJoin = () => {
+    console.log(`Joined room: ${roomId}`);
+  };
+
+  return (
+    <div className="chat-container">
+      <div className="header">
+        <input
+          type="text"
+          placeholder="Your Name"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Room ID"
+          value={roomId}
+          onChange={(e) => setRoomId(e.target.value)}
+        />
+        <button onClick={handleRoomJoin}>Join Room</button>
+      </div>
+      <div className="message-container">
+        {messages.map((msg, index) => (
+          <div key={index} className={`message ${msg.sender === 'self' ? 'own-message' : 'other-message'}`}>
+            {msg.sender !== 'self' && <span className="sender">{msg.sender}: </span>}{msg.text}
+          </div>
+        ))}
+      </div>
+      <div className="input-container">
+        <input
+          type="text"
+          placeholder="Type your message..."
+          value={messageInput}
+          onChange={(e) => setMessageInput(e.target.value)}
+        />
+        <button onClick={handleMessageSend}>Send</button>
+      </div>
+    </div>
+  );
+};
+
+export default ChatPage;
