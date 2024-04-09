@@ -1,9 +1,8 @@
-// ChatPage.js
 import React, { useState, useEffect } from 'react';
 import './ChatApp.css';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:8080'); // Replace with your server URL
+const socket = io('http://localhost:8080');
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
@@ -15,7 +14,6 @@ const ChatPage = () => {
     socket.on('receive-message', (data) => {
       const incomingMessage = data.message;
       const sender = data.sender;
-      // const roomId = data.roomId;
       setMessages((prevMessages) => [...prevMessages, { text: incomingMessage, sender: sender }]);
     });
 
@@ -29,8 +27,9 @@ const ChatPage = () => {
 
     socket.emit('send-message', {
         roomId: roomId,
-        sender: username,
+        senderId: username,
         message: messageInput,
+        attachment: 'fake attachment',
       }
     );
 
@@ -43,7 +42,9 @@ const ChatPage = () => {
 
     socket.emit('join-room', {
       roomId: roomId,
-      username: username,
+      senderId: username,
+      joinDate: new Date(),
+      role: 'fake role',
     });
   };
 
