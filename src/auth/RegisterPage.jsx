@@ -31,12 +31,7 @@ const RegisterPage = () => {
     try {
       const response = await axios.post(url, payload);
       const accessToken = response.data.access_token;
-      const userFullname =
-        response.data.first_name + " " + response.data.last_name;
-      const username = response.data.username;
       localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("userFullname", userFullname);
-      localStorage.setItem("username", username);
       navigate("/chat");
     } catch (error) {
       if (error.response && error.response.status === 400) {

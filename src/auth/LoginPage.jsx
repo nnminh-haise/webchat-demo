@@ -8,7 +8,7 @@ const BACKEND_SERVER_URL = "http://localhost:8081";
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); // Correctly use useState for error
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -18,13 +18,7 @@ const LoginForm = () => {
     try {
       const response = await axios.post(url, payload);
       const accessToken = response.data.access_token;
-      const userFullname =
-        response.data.first_name + " " + response.data.last_name;
-      const username = response.data.username;
       localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("userFullname", userFullname);
-      localStorage.setItem("username", username);
-
       navigate("/chat");
     } catch (error) {
       if (error.response && error.response.status === 401) {
