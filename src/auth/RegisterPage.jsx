@@ -1,53 +1,50 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import './RegisterPage.css';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "./RegisterPage.css";
+import axios from "axios";
+
+const BACKEND_SERVER_URL = "http://localhost:8081";
 
 const RegisterPage = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [gender, setGender] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const userData = {
-      first_name: firstName,
-      last_name: lastName,
+
+    const payload = {
+      firstName,
+      lastName,
       email,
       password,
-      dob: dateOfBirth,
       gender,
+      dateOfBirth,
     };
 
+    const url = `${BACKEND_SERVER_URL}/api/v1/auth/signup`;
     try {
-      const response = await fetch('http://localhost:8080/api/v1/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Registration successful:', data);
-
-        // Store the JWT token in sessionStorage
-        sessionStorage.setItem('jwtToken', data.jwt);
-
-        // Redirect or show success message
-        navigate('/chat');
-      } else {
-        const errorData = await response.json();
-        console.error('Registration failed:', errorData);
-        // Show error message
-      }
+      const response = await axios.post(url, payload);
+      const accessToken = response.data.access_token;
+      const userFullname =
+        response.data.first_name + " " + response.data.last_name;
+      const username = response.data.username;
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("userFullname", userFullname);
+      localStorage.setItem("username", username);
+      navigate("/chat");
     } catch (error) {
-      console.error('Error:', error);
+      if (error.response && error.response.status === 400) {
+        const message = error.response.data.message;
+        setError(message);
+      } else {
+        setError("An error occurred. Please try again.");
+      }
     }
   };
 
@@ -120,9 +117,10 @@ const RegisterPage = () => {
           </select>
         </div>
         <button type="submit">Register</button>
+        {error && <p className="error-message">{error}</p>}
       </form>
       <p>
-        Already have an account? <Link to="/login">Login</Link>
+        Already have an account? <Link to="/">Login</Link>
       </p>
     </div>
   );

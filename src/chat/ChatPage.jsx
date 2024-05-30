@@ -367,10 +367,10 @@ const ChatPage = () => {
         })
         .catch((error) => {
           console.error("Error fetching current user:", error);
-          navigate("/login");
+          navigate("/");
         });
     } else {
-      navigate("/login");
+      navigate("/");
     }
   }, [navigate]);
 
