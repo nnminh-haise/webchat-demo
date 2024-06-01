@@ -70,7 +70,7 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
       onNewGroupChatCreated();
     });
 
-    handleCloseButton();
+    setTimeout(() => handleCloseButton(), 100);
   };
 
   // * [Func] Handle sent invitation
@@ -81,7 +81,6 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
       !groupChat ||
       !invitationReason
     ) {
-      console.log("missing param");
       return;
     }
 
@@ -101,7 +100,7 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
       }
     };
 
-    for (let user of invitingUsers) {
+    for (const user of invitingUsers) {
       const invitationPayload = {
         inviterId: localStorage.getItem("userId"),
         recipientId: user._id,
@@ -109,7 +108,14 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
         inviteReason: invitationReason,
       };
       sendInvitaion(invitationPayload).then((invitation) => {
-        console.log("invitation sent:", invitation);
+        // console.log("invitation sent:", invitation);
+        const incomingInvitaionPayload = {
+          groupChatId: invitation.group_chat_id,
+          inviterId: invitation.inviter_id,
+          recipientId: invitation.recipient_id,
+          inviteReason: invitation.invite_reason,
+        };
+        socket.emit("incoming-invitation", incomingInvitaionPayload);
       });
     }
   };
@@ -160,6 +166,7 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
 
   // * [Func] Handle close button
   const handleCloseButton = () => {
+    console.log("Executed handleCloseButton");
     setGroupChatName("");
     setDescription("");
     setUsernames("");
