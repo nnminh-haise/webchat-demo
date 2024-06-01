@@ -85,6 +85,22 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
       return;
     }
 
+    const sendInvitaion = async (payload) => {
+      try {
+        const response = await axios.post(SEND_INVITATION_URL, payload, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        });
+        return response.data;
+      } catch (error) {
+        if (error.response.status >= 400) {
+          console.error(error.response.data);
+        }
+        return null;
+      }
+    };
+
     for (let user of invitingUsers) {
       const invitationPayload = {
         inviterId: localStorage.getItem("userId"),
@@ -92,11 +108,8 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
         groupChatId: groupChat._id,
         inviteReason: invitationReason,
       };
-      // console.log(`invitationPayload for ${user.username}:`, invitationPayload);
-      axios.post(SEND_INVITATION_URL, invitationPayload, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
+      sendInvitaion(invitationPayload).then((invitation) => {
+        console.log("invitation sent:", invitation);
       });
     }
   };
