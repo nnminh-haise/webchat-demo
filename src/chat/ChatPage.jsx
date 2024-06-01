@@ -13,6 +13,7 @@ import CreateGroupChatModal from "./modals/CreateGroupChat";
 const BACKEND_SERVER_URL = "http://localhost:8081";
 const FETCH_USER_PROFILE = `${BACKEND_SERVER_URL}/api/v1/users/me`;
 const FETCH_CONVERSATIONS_URL = `${BACKEND_SERVER_URL}/api/v1/user-to-groups/groups`;
+const FETCH_SENT_INVITATIONS_URL = `${BACKEND_SERVER_URL}/api/v1/sent-invitations`;
 
 let socket = null;
 
@@ -131,17 +132,45 @@ const ChatPage = () => {
     try {
       const accessToken = getAccessToken();
       const url = `${FETCH_CONVERSATIONS_URL}/${currentUser._id}`;
-      console.log("[fetchConversations] Fetching conversations from:", url);
       const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
       const conversationsArray = Object.values(response.data);
-      console.log("[fetchConversations] Conversations:", conversationsArray);
       setConversations(conversationsArray);
     } catch (error) {
       console.error("Error fetching conversations:", error);
+    }
+  };
+
+  // * [Func] Fetch sent invitations
+  const fetchSentInvitations = async () => {
+    if (!currentUser) {
+      console.log("[fetchSentInvitations] Current user is not available");
+      return;
+    }
+
+    try {
+      const accessToken = getAccessToken();
+      const url = `${FETCH_CONVERSATIONS_URL}/sent`;
+      console.log(
+        "[fetchSentInvitations] Fetching sent invitations from:",
+        url
+      );
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const conversationsArray = Object.values(response.data);
+      console.log(
+        "[fetchSentInvitations] Sent invitations:",
+        conversationsArray
+      );
+      setConversations(conversationsArray);
+    } catch (error) {
+      console.error("Error fetching sent invitations:", error);
     }
   };
 
@@ -246,14 +275,16 @@ const ChatPage = () => {
     <div className="chat-page-container">
       <div className="user-section">
         {currentUser ? (
+          // * [UI] User profile section
           <div className="profile-section">
             <h2>
               {currentUser.first_name} {currentUser.last_name}
             </h2>
             <p>@{currentUser.username}</p>
+            {/* // * [UI] Navigation bar */}
             <div className="nav-bar">
               <button className="sign-out-btn" onClick={handleSignOutEvent}>
-                Sign-out
+                Sign out
               </button>
               <button
                 className="create-group-chat-btn"
@@ -261,8 +292,9 @@ const ChatPage = () => {
                   setShowCreateChatModal(true);
                 }}
               >
-                Create new group chat
+                Create group chat
               </button>
+              {/* // * [UI] Create group chat modal */}
               <CreateGroupChatModal
                 show={showCreateChatModal}
                 handleClose={() => {
@@ -273,11 +305,16 @@ const ChatPage = () => {
                 <p>This is the modal content!</p>
               </CreateGroupChatModal>
               <button className="notification-btn">Notifications</button>
+              <button className="sent-invitaion-btn">Sent Invitations</button>
+              <button className="received-invitaion-btn">
+                Received Invitations
+              </button>
             </div>
           </div>
         ) : (
           <p>Loading profile...</p>
         )}
+        {/* // * [UI] Conversation list section */}
         <div className="conversation-list-section">
           {conversations.map((conversation) => (
             <div
@@ -290,7 +327,9 @@ const ChatPage = () => {
           ))}
         </div>
       </div>
+      {/* // * [UI] Chat section */}
       <div className="chat-section">
+        {/* // * [UI] Chat header section */}
         <div className="messages-section">
           {messages.map((message, index) => (
             <div
@@ -317,6 +356,7 @@ const ChatPage = () => {
           ))}
           <div ref={messagesEndRef} />
         </div>
+        {/* // * [UI] Message input section */}
         <div className="message-input-section">
           <input
             type="text"
