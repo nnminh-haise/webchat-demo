@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ChatPage.css";
 import io from "socket.io-client";
@@ -9,7 +9,6 @@ import axios from "axios";
  * TODO: resolve current conversation lost when page reload
  * TODO: implement sending message to the server
  */
-
 const BACKEND_SERVER_URL = "http://localhost:8081";
 const FETCH_USER_PROFILE = `${BACKEND_SERVER_URL}/api/v1/users/me`;
 const FETCH_CONVERSATIONS_URL = `${BACKEND_SERVER_URL}/api/v1/user-to-groups/groups`;
@@ -41,14 +40,26 @@ const joinRoom = (roomId, userId) => {
   socket.emit("join-room", { roomId, userId });
 };
 
+const leaveRoom = (roomId, userId) => {
+  if (!socket) {
+    console.error("Socket is not connected");
+    return;
+  }
+
+  socket.emit("leave-room", { roomId, userId });
+};
+
 const ChatPage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
 
+  // * Handle page reload event
   useEffect(() => {
+    // * Fetch user profile base on the current access token in the local storage
     const fetchUserProfile = async () => {
       try {
         const accessToken = getAccessToken();
@@ -82,6 +93,7 @@ const ChatPage = () => {
     };
   }, [navigate]);
 
+  // * Fetch conversations which the current user is participating in
   useEffect(() => {
     const fetchConversations = async () => {
       if (currentUser) {
@@ -104,6 +116,7 @@ const ChatPage = () => {
     fetchConversations();
   }, [currentUser]);
 
+  // * Listen to the receive-message event from the server to update the messages
   useEffect(() => {
     if (!socket) {
       return;
@@ -114,19 +127,42 @@ const ChatPage = () => {
       setMessages((prevMessages) => [...prevMessages, message]);
     });
 
-    // return () => {
-    //   if (socket) {
-    //     socket.off("receive-message");
-    //   }
-    // };
+    return () => {
+      if (socket) {
+        socket.off("receive-message");
+      }
+    };
   }, [socket]);
 
-  const handleConversationClick = (conversation) => {
-    console.log("Clicked conversation:", conversation);
-    setCurrentConversation(conversation);
+  // * Scroll to the bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
+  // * Handle conversation selection event
+  const handleConversationClick = (conversation) => {
+    if (currentConversation && conversation._id === currentConversation._id) {
+      console.log(currentConversation);
+      console.log("Already in the conversation");
+      return;
+    }
+
+    setMessages([]);
+    if (currentConversation) {
+      leaveRoom(currentConversation.groupChatId._id, currentUser._id);
+    }
+    setCurrentConversation(conversation);
     connectToSocket(getAccessToken());
     joinRoom(conversation.groupChatId._id, currentUser._id);
+  };
+
+  const handleSignOutEvent = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("currentConversation");
+    leaveRoom(currentConversation.groupChatId._id, currentUser._id);
+    navigate("/");
   };
 
   return (
@@ -138,6 +174,15 @@ const ChatPage = () => {
               {currentUser.first_name} {currentUser.last_name}
             </h2>
             <p>@{currentUser.username}</p>
+            <div className="nav-bar">
+              <button className="sign-out-btn" onClick={handleSignOutEvent}>
+                Sign-out
+              </button>
+              <button className="create-group-chat-btn">
+                Create new group chat
+              </button>
+              <button className="notification-btn">Notifications</button>
+            </div>
           </div>
         ) : (
           <p>Loading profile...</p>
@@ -156,31 +201,28 @@ const ChatPage = () => {
       </div>
       <div className="chat-section">
         <div className="messages-section">
-          <div className="messages-section">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`message ${
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`message ${
+                message.userId._id !== currentUser._id ? "receipent" : "sender"
+              }`}
+            >
+              {message.userId._id !== currentUser._id ? (
+                <p className="sender-name">{message.userId.lastName}</p>
+              ) : null}
+              <p
+                className={`message-text ${
                   message.userId._id !== currentUser._id
                     ? "receipent"
                     : "sender"
                 }`}
               >
-                {message.userId._id !== currentUser._id ? (
-                  <p className="sender-name">{message.userId.lastName}</p>
-                ) : null}
-                <p
-                  className={`message-text ${
-                    message.userId._id !== currentUser._id
-                      ? "receipent"
-                      : "sender"
-                  }`}
-                >
-                  {message.message}
-                </p>
-              </div>
-            ))}
-          </div>
+                {message.message} - {message.createAt}
+              </p>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
         </div>
         <div className="message-input-section">
           <input type="text" placeholder="Type your message here..." />

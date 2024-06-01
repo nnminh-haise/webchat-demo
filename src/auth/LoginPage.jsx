@@ -1,9 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./LoginPage.css";
 import axios from "axios";
 
 const BACKEND_SERVER_URL = "http://localhost:8081";
+
+const authorizedAccessToken = async (accessToken) => {
+  const url = `${BACKEND_SERVER_URL}/api/v1/users/me`;
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return true;
+  } catch (error) {
+    console.error("error:", error);
+    return false;
+  }
+};
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -28,6 +43,19 @@ const LoginForm = () => {
       }
     }
   };
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      return;
+    }
+
+    authorizedAccessToken(accessToken).then((isAuthorized) => {
+      if (isAuthorized) {
+        navigate("/chat");
+      }
+    });
+  }, []);
 
   return (
     <div className="login-container">

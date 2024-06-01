@@ -23,6 +23,12 @@ html {
   border-right: 1px solid #ccc;
   display: flex;
   flex-direction: column;
+  gap: 5px;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 10px;
 }
 
 .profile-section {
@@ -80,7 +86,7 @@ html {
 
 .sender-name {
   font-weight: bold;
-  margin-bottom: 5px;
+  margin: 5px;
 }
 
 .message-text {
