@@ -53,11 +53,31 @@ const leaveRoom = (roomId, userId) => {
   socket.emit("leave-room", { roomId, userId });
 };
 
+const sendMessage = (roomId, userId, message) => {
+  if (!socket) {
+    console.error("Socket is not connected");
+    return;
+  }
+
+  if (!roomId || !userId || !message) {
+    return;
+  }
+
+  const payload = {
+    groupChatId: roomId,
+    userId,
+    message,
+    attachment: null,
+  };
+  socket.emit("send-message", payload);
+};
+
 const ChatPage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState("");
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
@@ -120,15 +140,16 @@ const ChatPage = () => {
     fetchConversations();
   }, [currentUser]);
 
-  // * Listen to the receive-message event from the server to update the messages
+  // * Listening to the receive-message event from the server to update the messages
   useEffect(() => {
     if (!socket) {
       return;
     }
 
     socket.on("receive-message", (message) => {
-      console.log("Received message:", message);
-      setMessages((prevMessages) => [...prevMessages, message]);
+      setMessages((prevMessages) => {
+        return [message, ...prevMessages];
+      });
     });
 
     return () => {
@@ -144,6 +165,19 @@ const ChatPage = () => {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // * Handle page reload event
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      setTimeout(console.log("reload page!"), 100000000000);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   // * Handle conversation selection event
   const handleConversationClick = (conversation) => {
@@ -163,6 +197,7 @@ const ChatPage = () => {
     joinRoom(conversation.groupChatId._id, currentUser._id);
   };
 
+  // * Handle sign-out event
   const handleSignOutEvent = () => {
     if (
       !currentConversation ||
@@ -178,6 +213,29 @@ const ChatPage = () => {
     console.log("Leaving room:", currentConversation);
     leaveRoom(currentConversation.groupChatId._id, currentUser._id);
     navigate("/");
+  };
+
+  // * Handle send message event
+  const handleSendMessageEvent = () => {
+    const newMessage = {
+      userId: currentUser,
+      message: messageInput,
+      groupChatId: currentConversation.groupChatId._id,
+      createAt: new Date().toISOString(),
+    };
+    console.log("new message:", newMessage);
+    setMessages((prevMessages) => {
+      const messages = [newMessage, ...prevMessages];
+      console.log("messages:", messages);
+      console.log("from sending handler");
+      return messages;
+    });
+    sendMessage(
+      currentConversation.groupChatId._id,
+      currentUser._id,
+      messageInput
+    );
+    setMessageInput("");
   };
 
   return (
@@ -220,15 +278,17 @@ const ChatPage = () => {
             <div
               key={index}
               className={`message ${
-                message.userId._id !== currentUser._id ? "receipent" : "sender"
+                !message.userId || message.userId._id !== currentUser._id
+                  ? "receipent"
+                  : "sender"
               }`}
             >
-              {message.userId._id !== currentUser._id ? (
+              {!message.userId || message.userId._id !== currentUser._id ? (
                 <p className="sender-name">{message.userId.lastName}</p>
               ) : null}
               <p
                 className={`message-text ${
-                  message.userId._id !== currentUser._id
+                  !message.userId || message.userId._id !== currentUser._id
                     ? "receipent"
                     : "sender"
                 }`}
@@ -240,8 +300,15 @@ const ChatPage = () => {
           <div ref={messagesEndRef} />
         </div>
         <div className="message-input-section">
-          <input type="text" placeholder="Type your message here..." />
-          <button>Send</button>
+          <input
+            type="text"
+            placeholder="Type your message here..."
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+          />
+          <button className="send-message-btn" onClick={handleSendMessageEvent}>
+            Send
+          </button>
         </div>
       </div>
     </div>
