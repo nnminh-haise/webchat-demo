@@ -46,6 +46,10 @@ const leaveRoom = (roomId, userId) => {
     return;
   }
 
+  if (!roomId || !userId) {
+    return;
+  }
+
   socket.emit("leave-room", { roomId, userId });
 };
 
@@ -154,13 +158,24 @@ const ChatPage = () => {
       leaveRoom(currentConversation.groupChatId._id, currentUser._id);
     }
     setCurrentConversation(conversation);
+    localStorage.setItem("currentConversation", conversation.groupChatId._id);
     connectToSocket(getAccessToken());
     joinRoom(conversation.groupChatId._id, currentUser._id);
   };
 
   const handleSignOutEvent = () => {
+    if (
+      !currentConversation ||
+      localStorage.getItem("currentConversation") === null
+    ) {
+      localStorage.removeItem("accessToken");
+      navigate("/");
+      return;
+    }
+
     localStorage.removeItem("accessToken");
     localStorage.removeItem("currentConversation");
+    console.log("Leaving room:", currentConversation);
     leaveRoom(currentConversation.groupChatId._id, currentUser._id);
     navigate("/");
   };
