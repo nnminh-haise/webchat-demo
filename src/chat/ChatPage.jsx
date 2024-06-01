@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./ChatPage.css";
 import io from "socket.io-client";
 import axios from "axios";
+import CreateGroupChatModal from "./modals/CreateGroupChat";
 
 /**
  * TODO: implement disconnect socket server when user leave chat page
@@ -78,8 +79,9 @@ const ChatPage = () => {
   const [currentConversation, setCurrentConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
-  const navigate = useNavigate();
+  const [showCreateChatModal, setShowCreateChatModal] = useState(false);
   const messagesEndRef = useRef(null);
+  const navigate = useNavigate();
 
   // * Handle page reload event
   useEffect(() => {
@@ -182,8 +184,6 @@ const ChatPage = () => {
   // * Handle conversation selection event
   const handleConversationClick = (conversation) => {
     if (currentConversation && conversation._id === currentConversation._id) {
-      console.log(currentConversation);
-      console.log("Already in the conversation");
       return;
     }
 
@@ -210,7 +210,6 @@ const ChatPage = () => {
 
     localStorage.removeItem("accessToken");
     localStorage.removeItem("currentConversation");
-    console.log("Leaving room:", currentConversation);
     leaveRoom(currentConversation.groupChatId._id, currentUser._id);
     navigate("/");
   };
@@ -223,11 +222,8 @@ const ChatPage = () => {
       groupChatId: currentConversation.groupChatId._id,
       createAt: new Date().toISOString(),
     };
-    console.log("new message:", newMessage);
     setMessages((prevMessages) => {
       const messages = [newMessage, ...prevMessages];
-      console.log("messages:", messages);
-      console.log("from sending handler");
       return messages;
     });
     sendMessage(
@@ -236,6 +232,15 @@ const ChatPage = () => {
       messageInput
     );
     setMessageInput("");
+  };
+
+  const handleCreateGroupChat = (groupChatName, description, usernames) => {
+    console.log("group chat name:", groupChatName);
+    console.log("group chat description:", description);
+    console.log("usernames:", usernames);
+
+    const users = usernames.split(",").map((username) => username.trim());
+    console.log("users:", users);
   };
 
   return (
@@ -251,9 +256,24 @@ const ChatPage = () => {
               <button className="sign-out-btn" onClick={handleSignOutEvent}>
                 Sign-out
               </button>
-              <button className="create-group-chat-btn">
+              <button
+                className="create-group-chat-btn"
+                onClick={() => {
+                  setShowCreateChatModal(true);
+                }}
+              >
                 Create new group chat
               </button>
+              <CreateGroupChatModal
+                show={showCreateChatModal}
+                handleClose={() => {
+                  setShowCreateChatModal(false);
+                }}
+                handleCreate={handleCreateGroupChat}
+                socket={socket}
+              >
+                <p>This is the modal content!</p>
+              </CreateGroupChatModal>
               <button className="notification-btn">Notifications</button>
             </div>
           </div>
