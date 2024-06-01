@@ -9,12 +9,7 @@ const CREATE_GROUP_CHAT_URL = `${BACKEND_SERVER_URL}/api/v1/group-chats`;
 
 let socket = null;
 
-const CreateGroupChatModal = ({
-  show,
-  handleClose,
-  newGroupChatCreated,
-  setNewGroupChatCreated,
-}) => {
+const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
   const [socketConnection, setSocketConnection] = useState(false);
 
   if (show && socketConnection === false) {
@@ -56,9 +51,7 @@ const CreateGroupChatModal = ({
           },
         }
       );
-      console.log("response:", response);
-      setNewGroupChatCreated(true);
-      newGroupChatCreated = true;
+      setTimeout(() => onNewGroupChatCreated(), 100);
     } catch (error) {
       console.error(error);
       if (error.response.status >= 400) {

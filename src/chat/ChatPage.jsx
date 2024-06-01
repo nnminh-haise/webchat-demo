@@ -84,9 +84,9 @@ const ChatPage = () => {
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
-  // * Handle page reload event
+  // * [Hook] Handle page reload event
   useEffect(() => {
-    // * Fetch user profile base on the current access token in the local storage
+    // * [Func] Fetch user profile base on the current access token in the local storage
     const fetchUserProfile = async () => {
       try {
         const accessToken = getAccessToken();
@@ -121,35 +121,36 @@ const ChatPage = () => {
     };
   }, [navigate]);
 
-  // * Fetch conversations which the current user is participating in
-  useEffect(() => {
-    const fetchConversations = async () => {
-      if (currentUser) {
-        try {
-          const accessToken = getAccessToken();
-          const url = `${FETCH_CONVERSATIONS_URL}/${currentUser._id}`;
-          const response = await axios.get(url, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-          const conversationsArray = Object.values(response.data);
-          setConversations(conversationsArray);
-        } catch (error) {
-          console.error("Error fetching conversations:", error);
-        }
-      }
-    };
+  // * [Func] Fetch conversations which the current user is participated in
+  const fetchConversations = async () => {
+    if (!currentUser) {
+      console.log("[fetchConversations] Current user is not available");
+      return;
+    }
 
+    try {
+      const accessToken = getAccessToken();
+      const url = `${FETCH_CONVERSATIONS_URL}/${currentUser._id}`;
+      console.log("[fetchConversations] Fetching conversations from:", url);
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const conversationsArray = Object.values(response.data);
+      console.log("[fetchConversations] Conversations:", conversationsArray);
+      setConversations(conversationsArray);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+    }
+  };
+
+  // * [Hook] Hook activated when the current user is changed
+  useEffect(() => {
     fetchConversations();
   }, [currentUser]);
 
-  // * Fetching user's participating conversations after created group chat modal is closed
-  useEffect(() => {
-    console.log("new group chat created:", newGroupChatCreated);
-  }, []);
-
-  // * Listening to the receive-message event from the server to update the messages
+  // * [Hook] Listening to the receive-message event from the server to update the messages
   useEffect(() => {
     if (!socket) {
       return;
@@ -168,14 +169,14 @@ const ChatPage = () => {
     };
   }, [socket]);
 
-  // * Scroll to the bottom when messages change
+  // * [Hook] Scroll to the bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // * Handle page reload event
+  // * [Hook] Handle page reload event
   useEffect(() => {
     const handleBeforeUnload = () => {
       setTimeout(console.log("reload page!"), 100000000000);
@@ -188,7 +189,7 @@ const ChatPage = () => {
     };
   }, []);
 
-  // * Handle conversation selection event
+  // * [Func] Handle conversation selection event
   const handleConversationClick = (conversation) => {
     if (currentConversation && conversation._id === currentConversation._id) {
       return;
@@ -204,7 +205,7 @@ const ChatPage = () => {
     joinRoom(conversation.groupChatId._id, currentUser._id);
   };
 
-  // * Handle sign-out event
+  // * [Func] Handle sign-out event
   const handleSignOutEvent = () => {
     if (
       !currentConversation ||
@@ -221,7 +222,7 @@ const ChatPage = () => {
     navigate("/");
   };
 
-  // * Handle send message event
+  // * [Func] Handle send message event
   const handleSendMessageEvent = () => {
     const newMessage = {
       userId: currentUser,
@@ -266,10 +267,8 @@ const ChatPage = () => {
                 show={showCreateChatModal}
                 handleClose={() => {
                   setShowCreateChatModal(false);
-                  console.log("new message created:");
                 }}
-                newGroupChatCreated={newGroupChatCreated}
-                setNewGroupChatCreated={setNewGroupChatCreated}
+                onNewGroupChatCreated={fetchConversations}
               >
                 <p>This is the modal content!</p>
               </CreateGroupChatModal>
