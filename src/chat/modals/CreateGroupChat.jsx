@@ -2,11 +2,19 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import "./CreateGroupChat.css";
 import io from "socket.io-client";
+import axios from "axios";
+
+const BACKEND_SERVER_URL = "http://localhost:8081";
+const CREATE_GROUP_CHAT_URL = `${BACKEND_SERVER_URL}/api/v1/group-chats`;
 
 let socket = null;
 
-const CreateGroupChatModal = ({ show, handleClose, handleCreate }) => {
-  const BACKEND_SERVER_URL = "http://localhost:8081";
+const CreateGroupChatModal = ({
+  show,
+  handleClose,
+  newGroupChatCreated,
+  setNewGroupChatCreated,
+}) => {
   const [socketConnection, setSocketConnection] = useState(false);
 
   if (show && socketConnection === false) {
@@ -26,13 +34,39 @@ const CreateGroupChatModal = ({ show, handleClose, handleCreate }) => {
   const [foundUsers, setFoundUsers] = useState(new Map());
   const [invitingUsers, setInvitingUsers] = useState([]);
 
-  const handleSubmit = () => {
-    if (groupChatName) {
-      handleCreate(groupChatName, description, usernames);
-      handleCloseButton();
-    } else {
-      alert("Please fill in both fields.");
+  const handleCreateGroupChatEvent = () => {
+    if (!groupChatName) {
+      alert("Please fill in the group chat name.");
+      return;
     }
+
+    const createGroupChatPayload = {
+      name: groupChatName,
+      description: description,
+      hostId: localStorage.getItem("userId"),
+      creatorId: localStorage.getItem("userId"),
+    };
+    try {
+      const response = axios.post(
+        CREATE_GROUP_CHAT_URL,
+        createGroupChatPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        }
+      );
+      console.log("response:", response);
+      setNewGroupChatCreated(true);
+      newGroupChatCreated = true;
+    } catch (error) {
+      console.error(error);
+      if (error.response.status >= 400) {
+        console.error(error.response.data);
+      }
+    }
+
+    handleCloseButton();
   };
 
   const handleFindingUsers = (usernameList) => {
@@ -117,7 +151,7 @@ const CreateGroupChatModal = ({ show, handleClose, handleCreate }) => {
         />
 
         <div className="found-users">
-          <h3>Found Users:</h3>
+          <h3>Inviting Users:</h3>
           <ul>
             {invitingUsers.map((user) => {
               return (
@@ -129,7 +163,7 @@ const CreateGroupChatModal = ({ show, handleClose, handleCreate }) => {
           </ul>
         </div>
 
-        <button onClick={handleSubmit}>Create</button>
+        <button onClick={handleCreateGroupChatEvent}>Create</button>
         <button onClick={handleCloseButton}>Close</button>
       </div>
     </div>,

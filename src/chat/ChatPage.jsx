@@ -80,6 +80,7 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
   const [showCreateChatModal, setShowCreateChatModal] = useState(false);
+  const [newGroupChatCreated, setNewGroupChatCreated] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -100,6 +101,7 @@ const ChatPage = () => {
           },
         });
         setCurrentUser(response.data);
+        localStorage.setItem("userId", response.data._id);
       } catch (error) {
         if (error.response && error.response.status === 401) {
           navigate("/");
@@ -141,6 +143,11 @@ const ChatPage = () => {
 
     fetchConversations();
   }, [currentUser]);
+
+  // * Fetching user's participating conversations after created group chat modal is closed
+  useEffect(() => {
+    console.log("new group chat created:", newGroupChatCreated);
+  }, []);
 
   // * Listening to the receive-message event from the server to update the messages
   useEffect(() => {
@@ -234,15 +241,6 @@ const ChatPage = () => {
     setMessageInput("");
   };
 
-  const handleCreateGroupChat = (groupChatName, description, usernames) => {
-    console.log("group chat name:", groupChatName);
-    console.log("group chat description:", description);
-    console.log("usernames:", usernames);
-
-    const users = usernames.split(",").map((username) => username.trim());
-    console.log("users:", users);
-  };
-
   return (
     <div className="chat-page-container">
       <div className="user-section">
@@ -268,9 +266,10 @@ const ChatPage = () => {
                 show={showCreateChatModal}
                 handleClose={() => {
                   setShowCreateChatModal(false);
+                  console.log("new message created:");
                 }}
-                handleCreate={handleCreateGroupChat}
-                socket={socket}
+                newGroupChatCreated={newGroupChatCreated}
+                setNewGroupChatCreated={setNewGroupChatCreated}
               >
                 <p>This is the modal content!</p>
               </CreateGroupChatModal>
