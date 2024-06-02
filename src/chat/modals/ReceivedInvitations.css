@@ -20,6 +20,7 @@
   max-height: 80%;
   display: flex;
   flex-direction: column;
+  gap: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -33,6 +34,28 @@
 
 .received-invitation-modal-main h2 {
   margin-top: 0;
+}
+
+.tabs {
+  display: flex; /* Use flexbox to align tabs on the same line */
+  gap: 5px; /* Add a 5px gap between the tabs */
+  margin-bottom: 10px; /* Add some margin below the tabs for spacing */
+}
+
+.tabs button {
+  color: black;
+  flex: 1; /* Each button takes up an equal portion of the available space */
+  padding: 10px 20px; /* Adjust padding as needed */
+  border: 1px solid #ccc; /* Border for tabs */
+  background-color: #f8f8f8; /* Background color for tabs */
+  cursor: pointer; /* Cursor pointer for better UX */
+  text-align: center; /* Center the text inside the buttons */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.tabs button.active {
+  background-color: #007bff; /* Active tab background color */
+  color: #fff; /* Active tab text color */
 }
 
 .invitations-container {
@@ -57,6 +80,43 @@
   margin: 5px 0;
 }
 
+.replying-section {
+  display: block;
+}
+
+.replying-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.received-invitation-accept-btn,
+.received-invitation-deny-btn {
+  flex: 1;
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+
+.replying-btns .received-invitation-accept-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.replying-btns .received-invitation-deny-btn {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.replying-btns .received-invitation-accept-btn:hover {
+  background-color: #0056b3;
+}
+
+.replying-btns .received-invitation-deny-btn:hover {
+  background-color: #b71c1c;
+}
+
 .received-invitation-modal-close-btn {
   background-color: #007bff;
   color: white;
@@ -65,10 +125,38 @@
   padding: 10px 20px;
   cursor: pointer;
   margin-top: 20px;
-  flex-shrink: 0; /* Prevent button from shrinking */
-  align-self: center; /* Center the button horizontally */
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .received-invitation-modal-close-btn:hover {
   background-color: #0056b3;
+}
+
+.received-invitation.deny-invitation-input-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.deny-reason-input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.deny-reason-submit-btn {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.deny-reason-submit-btn:hover {
+  background-color: #b71c1c;
 }

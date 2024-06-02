@@ -43,20 +43,6 @@ const connectToSocket = (accessToken) => {
   });
 };
 
-const joinPrivateRoom = (userId) => {
-  if (!notificationSocket) {
-    console.error("Notification Socket is not connected");
-    return;
-  }
-  notificationSocket.emit("join-private-room", userId, (response) => {
-    if (response.error) {
-      console.error("Failed to join private room:", response.error);
-    } else {
-      console.log("Joined private room successfully");
-    }
-  });
-};
-
 const joinRoom = (roomId, userId) => {
   if (!socket) {
     console.error("Socket is not connected");
@@ -98,9 +84,31 @@ const sendMessage = (roomId, userId, message) => {
   socket.emit("send-message", payload);
 };
 
+// * [Func] Fetch user profile base on the current access token in the local storage
+const fetchUserProfile = async () => {
+  try {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return null;
+    }
+
+    const response = await axios.get(FETCH_USER_PROFILE, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      return null;
+    }
+  }
+};
+
 const ChatPage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [conversations, setConversations] = useState([]);
+  const [newGroupChatCreated, setNewGroupChatCreated] = useState(false);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
@@ -112,36 +120,31 @@ const ChatPage = () => {
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
+  // * [Hook] Fetch user profile when the page is loaded
+  useEffect(() => {
+    fetchUserProfile().then((user) => {
+      if (!user) {
+        navigate("/");
+        return;
+      }
+
+      localStorage.setItem("userId", user._id);
+      setCurrentUser(user);
+    });
+  }, []);
+
   // * [Hook] Handle page reload event
   useEffect(() => {
-    // * [Func] Fetch user profile base on the current access token in the local storage
-    const fetchUserProfile = async () => {
-      try {
-        const accessToken = getAccessToken();
-        if (!accessToken) {
+    const handleStorageChange = () => {
+      fetchUserProfile().then((user) => {
+        if (!user) {
           navigate("/");
           return;
         }
 
-        const response = await axios.get(FETCH_USER_PROFILE, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        setCurrentUser(response.data);
-        joinPrivateRoom(currentUser._id);
-        localStorage.setItem("userId", response.data._id);
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
-          navigate("/");
-        }
-      }
-    };
-
-    fetchUserProfile();
-
-    const handleStorageChange = () => {
-      fetchUserProfile();
+        localStorage.setItem("userId", user._id);
+        setCurrentUser(user);
+      });
     };
     window.addEventListener("storage", handleStorageChange);
 
@@ -150,26 +153,80 @@ const ChatPage = () => {
     };
   }, [navigate]);
 
-  // * [Func] Fetch conversations which the current user is participated in
-  const fetchConversations = async () => {
-    if (!currentUser) {
-      console.log("[fetchConversations] Current user is not available");
+  // * [Hook] Hook fetch conversations when the current user is loaded or a new group chat is created
+  useEffect(() => {
+    // * [Func] Fetch conversations which the current user is participated in
+    const fetchConversations = async () => {
+      if (!currentUser) {
+        console.log("[fetchConversations] Current user is not available");
+        return;
+      }
+
+      try {
+        const accessToken = getAccessToken();
+        const url = `${FETCH_CONVERSATIONS_URL}/${currentUser._id}`;
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        const conversationsArray = Object.values(response.data);
+        setConversations(conversationsArray);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+      }
+    };
+
+    fetchConversations();
+  }, [currentUser, newGroupChatCreated]);
+
+  // * [Func] Handle conversation selection event
+  const handleConversationClick = (conversation) => {
+    console.log("[handleConversationClick] Conversation:", conversation);
+    if (currentConversation && conversation._id === currentConversation._id) {
       return;
     }
 
-    try {
-      const accessToken = getAccessToken();
-      const url = `${FETCH_CONVERSATIONS_URL}/${currentUser._id}`;
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const conversationsArray = Object.values(response.data);
-      setConversations(conversationsArray);
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
+    setMessages([]);
+    if (currentConversation) {
+      leaveRoom(currentConversation.groupChatId._id, currentUser._id);
     }
+    setCurrentConversation(conversation);
+    localStorage.setItem("currentConversation", conversation.groupChatId._id);
+    connectToSocket(getAccessToken());
+    joinRoom(conversation.groupChatId._id, currentUser._id);
+  };
+
+  // * [Hook] Listen to the incoming message
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+    socket.on("receive-message", (message) => {
+      console.log("[receive-message] Message:", message);
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
+  }, [socket]);
+
+  // * [Func] Handle send message event
+  const handleSendMessageEvent = () => {
+    const newMessage = {
+      userId: currentUser,
+      message: messageInput,
+      groupChatId: currentConversation.groupChatId._id,
+      createAt: new Date().toISOString(),
+      attachment: null,
+    };
+    setMessages((prevMessages) => {
+      const messages = [...prevMessages, newMessage];
+      return messages;
+    });
+    sendMessage(
+      currentConversation.groupChatId._id,
+      currentUser._id,
+      messageInput
+    );
+    setMessageInput("");
   };
 
   // * [Func] Fetch sent invitations
@@ -202,37 +259,6 @@ const ChatPage = () => {
     }
   };
 
-  // * [Hook] Hook activated when the current user is changed
-  useEffect(() => {
-    fetchConversations();
-  }, [currentUser]);
-
-  // * [Hook] Listening to the receive-message event from the server to update the messages
-  useEffect(() => {
-    if (!socket) {
-      return;
-    }
-
-    socket.on("receive-message", (message) => {
-      setMessages((prevMessages) => {
-        return [message, ...prevMessages];
-      });
-    });
-
-    return () => {
-      if (socket) {
-        socket.off("receive-message");
-      }
-    };
-  }, [socket]);
-
-  // * [Hook] Scroll to the bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
-
   // * [Hook] Handle page reload event
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -245,50 +271,6 @@ const ChatPage = () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
-
-  // * [Hook] Listening to the receive-invitation event
-  useEffect(() => {
-    console.log("[Hook of receive-invitation] Activated");
-
-    const handleReceiveInvitation = (invitation) => {
-      console.log("receive-invitation:", invitation);
-    };
-
-    if (notificationSocket && currentUser) {
-      console.log(
-        "[Hook of receive-invitation] Socket is connected and user is available"
-      );
-      joinPrivateRoom(currentUser._id);
-      notificationSocket.on("receive-invitation", handleReceiveInvitation);
-    } else {
-      console.log(
-        "[Hook of receive-invitation] Socket or current user is not available"
-      );
-    }
-
-    return () => {
-      if (notificationSocket) {
-        notificationSocket.off("receive-invitation", handleReceiveInvitation);
-      }
-    };
-  }, [notificationSocket, currentUser]);
-
-  // * [Func] Handle conversation selection event
-  const handleConversationClick = (conversation) => {
-    // console.log("[handleConversationClick] Conversation:", conversation);
-    if (currentConversation && conversation._id === currentConversation._id) {
-      return;
-    }
-
-    setMessages([]);
-    if (currentConversation) {
-      leaveRoom(currentConversation.groupChatId._id, currentUser._id);
-    }
-    setCurrentConversation(conversation);
-    localStorage.setItem("currentConversation", conversation.groupChatId._id);
-    connectToSocket(getAccessToken());
-    joinRoom(conversation.groupChatId._id, currentUser._id);
-  };
 
   // * [Func] Handle sign-out event
   const handleSignOutEvent = () => {
@@ -305,26 +287,6 @@ const ChatPage = () => {
     localStorage.removeItem("currentConversation");
     leaveRoom(currentConversation.groupChatId._id, currentUser._id);
     navigate("/");
-  };
-
-  // * [Func] Handle send message event
-  const handleSendMessageEvent = () => {
-    const newMessage = {
-      userId: currentUser,
-      message: messageInput,
-      groupChatId: currentConversation.groupChatId._id,
-      createAt: new Date().toISOString(),
-    };
-    setMessages((prevMessages) => {
-      const messages = [...prevMessages, newMessage];
-      return messages;
-    });
-    sendMessage(
-      currentConversation.groupChatId._id,
-      currentUser._id,
-      messageInput
-    );
-    setMessageInput("");
   };
 
   // * [Func] Handle fetch sent invitations event
@@ -397,7 +359,9 @@ const ChatPage = () => {
                 handleClose={() => {
                   setShowCreateChatModal(false);
                 }}
-                onNewGroupChatCreated={fetchConversations}
+                onNewGroupChatCreated={() => {
+                  setNewGroupChatCreated(true);
+                }}
               >
                 <p>This is the modal content!</p>
               </CreateGroupChatModal>
