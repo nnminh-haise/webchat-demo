@@ -12,10 +12,12 @@ import ReceivedInvitationsModal from "./modals/ReceivedInvitations";
  * TODO: resolve current conversation lost when page reload
  * TODO: implement sending message to the server
  */
+// * [Const] Backend server URL
 const BACKEND_SERVER_URL = "http://localhost:8081";
 const FETCH_USER_PROFILE = `${BACKEND_SERVER_URL}/api/v1/users/me`;
 const FETCH_CONVERSATIONS_URL = `${BACKEND_SERVER_URL}/api/v1/user-to-groups/groups`;
 const FETCH_SENT_INVITAIONS_URL = `${BACKEND_SERVER_URL}/api/v1/invitations/sent`;
+const FETCH_RECEIVED_INVITAIONS_URL = `${BACKEND_SERVER_URL}/api/v1/invitations/received`;
 
 const notificationSocket = io(BACKEND_SERVER_URL, {
   auth: {
@@ -325,6 +327,7 @@ const ChatPage = () => {
     setMessageInput("");
   };
 
+  // * [Func] Handle fetch sent invitations event
   const handleFetchSentInvitaionsEvent = async () => {
     console.log("[handleFetchSentInvitaionsEvent] Fetching sent invitations");
     try {
@@ -337,6 +340,29 @@ const ChatPage = () => {
     } catch (error) {
       if (error.response && error.response.status >= 401) {
         console.error("Error fetching sent invitations:", error.response.data);
+      }
+      return null;
+    }
+  };
+
+  // * [Func] Handle fetch received invitations event
+  const handleFetchReceivedInvitationsEvent = async () => {
+    console.log(
+      "[handleFetchReceivedInvitationsEvent] Fetching received invitations"
+    );
+    try {
+      const response = await axios.get(FETCH_RECEIVED_INVITAIONS_URL, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status >= 401) {
+        console.error(
+          "Error fetching received invitations:",
+          error.response.data
+        );
       }
       return null;
     }
@@ -400,6 +426,7 @@ const ChatPage = () => {
               <ReceivedInvitationsModal
                 show={showReceivedInvitationsModal}
                 onClose={() => setReceivedInvitationModals(false)}
+                onFetchReceivedInvitations={handleFetchReceivedInvitationsEvent}
               ></ReceivedInvitationsModal>
             </div>
           </div>

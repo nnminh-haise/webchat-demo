@@ -8,8 +8,6 @@ const SentInvitationsModal = ({ show, onClose, onFetchSentInvitations }) => {
     : "sent-invitation-modal display-none";
   const [sentInvitations, setSentInvitations] = useState([]);
 
-  console.log("[Sent invitation modal] Open modal");
-
   useEffect(() => {
     if (show) {
       const fetchInvitations = async () => {
@@ -37,6 +35,9 @@ const SentInvitationsModal = ({ show, onClose, onFetchSentInvitations }) => {
         <div className="invitations-container">
           {sentInvitations.map((invitation) => (
             <div key={invitation._id} className="invitation-card">
+              <p>
+                <strong>For Group Chat:</strong> {invitation.groupChatId.name}
+              </p>
               <p>
                 <strong>Invitation to</strong>{" "}
                 {invitation.recipientId.firstName +
