@@ -402,7 +402,7 @@ const ChatPage = () => {
               className="conversation-item"
               onClick={() => handleConversationClick(conversation)}
             >
-              {conversation.groupChatId.name}
+              {conversation.groupChatId?.name}
             </div>
           ))}
         </div>

@@ -3,7 +3,9 @@ import ReactDOM from "react-dom";
 import "./SentInvitation.css";
 
 const SentInvitationsModal = ({ show, onClose, onFetchSentInvitations }) => {
-  const showHideClassName = show ? "modal display-block" : "modal display-none";
+  const showHideClassName = show
+    ? "sent-invitation-modal display-block"
+    : "sent-invitation-modal display-none";
   const [sentInvitations, setSentInvitations] = useState([]);
 
   console.log("[Sent invitation modal] Open modal");
@@ -52,7 +54,7 @@ const SentInvitationsModal = ({ show, onClose, onFetchSentInvitations }) => {
 
   return ReactDOM.createPortal(
     <div className={showHideClassName}>
-      <div className="modal-main">
+      <div className="sent-invitation-modal-main">
         <h2>Sent Invitations:</h2>
         <div className="invitations-container">
           {sentInvitations.map((invitation) => (
@@ -72,7 +74,12 @@ const SentInvitationsModal = ({ show, onClose, onFetchSentInvitations }) => {
             </div>
           ))}
         </div>
-        <button onClick={handleModalCloseEvent}>Close</button>
+        <button
+          className="sent-invitation-modal-close-btn"
+          onClick={handleModalCloseEvent}
+        >
+          Close
+        </button>
       </div>
     </div>,
     document.getElementById("modal-root")

@@ -1,4 +1,4 @@
-.modal {
+.sent-invitation-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -11,14 +11,15 @@
   overflow-y: auto;
 }
 
-.modal-main {
+.sent-invitation-modal-main {
   background: white;
   padding: 20px;
   border-radius: 8px;
   max-width: 600px;
   width: 30%;
   max-height: 80%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -30,15 +31,16 @@
   display: none;
 }
 
-.modal-main h2 {
+.sent-invitation-modal-main h2 {
   margin-top: 0;
 }
 
 .invitations-container {
+  flex: 1 1 auto; /* Grow and shrink as necessary */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  position: relative; /* Add position relative */
 }
 
 .invitation-card {
@@ -55,19 +57,18 @@
   margin: 5px 0;
 }
 
-.modal-main button {
-  position: absolute; /* Position absolute */
-  bottom: 10px; /* Adjust bottom position */
-  left: 50%; /* Center horizontally */
-  transform: translateX(-50%); /* Center horizontally */
-  padding: 10px 20px;
+.sent-invitation-modal-close-btn {
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
+  padding: 10px 20px;
   cursor: pointer;
+  margin-top: 20px;
+  flex-shrink: 0; /* Prevent button from shrinking */
+  align-self: center; /* Center the button horizontally */
 }
 
-.modal-main button:hover {
+.sent-invitation-modal-close-btn:hover {
   background-color: #0056b3;
 }
