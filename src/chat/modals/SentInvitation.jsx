@@ -15,29 +15,7 @@ const SentInvitationsModal = ({ show, onClose, onFetchSentInvitations }) => {
       const fetchInvitations = async () => {
         try {
           const invitations = await onFetchSentInvitations();
-          console.log("[Sent invitation modal] Invitations: ", invitations);
-          console.log(
-            "[Sent invitation modal] Data type of invitations: ",
-            typeof invitations
-          );
-          console.log(
-            "[Sent invitation modal] Is array: ",
-            Array.isArray(invitations)
-          );
-
-          // If invitations is an object, convert it to an array
-          if (
-            invitations &&
-            typeof invitations === "object" &&
-            !Array.isArray(invitations)
-          ) {
-            const invitationsArray = Object.values(invitations);
-            setSentInvitations(invitationsArray);
-          } else if (Array.isArray(invitations)) {
-            setSentInvitations(invitations);
-          } else {
-            console.error("Error: fetched data is not an array or object");
-          }
+          setSentInvitations(Object.values(invitations));
         } catch (error) {
           console.error("Error fetching sent invitations:", error);
         }

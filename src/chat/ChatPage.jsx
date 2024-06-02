@@ -5,6 +5,7 @@ import io from "socket.io-client";
 import axios from "axios";
 import CreateGroupChatModal from "./modals/CreateGroupChat";
 import SentInvitationsModal from "./modals/SentInvitation";
+import ReceivedInvitationsModal from "./modals/ReceivedInvitations";
 
 /**
  * TODO: implement disconnect socket server when user leave chat page
@@ -103,6 +104,8 @@ const ChatPage = () => {
   const [messageInput, setMessageInput] = useState("");
   const [showCreateChatModal, setShowCreateChatModal] = useState(false);
   const [showSentInvitationsModal, setShowSentInvitationsModal] =
+    useState(false);
+  const [showReceivedInvitationsModal, setReceivedInvitationModals] =
     useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
@@ -386,9 +389,18 @@ const ChatPage = () => {
                 onClose={() => setShowSentInvitationsModal(false)}
                 onFetchSentInvitations={handleFetchSentInvitaionsEvent}
               ></SentInvitationsModal>
-              <button className="received-invitaion-btn">
+              <button
+                className="received-invitaion-btn"
+                onClick={() => {
+                  setReceivedInvitationModals(true);
+                }}
+              >
                 Received Invitations
               </button>
+              <ReceivedInvitationsModal
+                show={showReceivedInvitationsModal}
+                onClose={() => setReceivedInvitationModals(false)}
+              ></ReceivedInvitationsModal>
             </div>
           </div>
         ) : (
