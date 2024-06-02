@@ -314,7 +314,7 @@ const ChatPage = () => {
       createAt: new Date().toISOString(),
     };
     setMessages((prevMessages) => {
-      const messages = [newMessage, ...prevMessages];
+      const messages = [...prevMessages, newMessage];
       return messages;
     });
     sendMessage(
