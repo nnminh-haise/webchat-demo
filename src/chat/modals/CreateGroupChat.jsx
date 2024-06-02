@@ -19,7 +19,6 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
         Bearer: localStorage.getItem("accessToken"),
       },
     });
-    console.log("connected to socket");
     setSocketConnection(true);
   }
 
@@ -38,6 +37,7 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
       return;
     }
 
+    // * [Func] Create group chat API
     const createGroupChat = async () => {
       const createGroupChatPayload = {
         name: groupChatName,
@@ -65,12 +65,14 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
       }
     };
 
+    // * [Exec] Create group chat
     createGroupChat().then((groupChat) => {
       handleSentInvitation(groupChat);
       onNewGroupChatCreated();
     });
 
-    setTimeout(() => handleCloseButton(), 100);
+    // TODO: try to avoid using setTimeout
+    setTimeout(() => handleCloseButton(), 200);
   };
 
   // * [Func] Handle sent invitation
@@ -84,22 +86,6 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
       return;
     }
 
-    const sendInvitaion = async (payload) => {
-      try {
-        const response = await axios.post(SEND_INVITATION_URL, payload, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        });
-        return response.data;
-      } catch (error) {
-        if (error.response.status >= 400) {
-          console.error(error.response.data);
-        }
-        return null;
-      }
-    };
-
     for (const user of invitingUsers) {
       const invitationPayload = {
         inviterId: localStorage.getItem("userId"),
@@ -107,17 +93,10 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
         groupChatId: groupChat._id,
         inviteReason: invitationReason,
       };
-      sendInvitaion(invitationPayload).then((invitation) => {
-        // console.log("invitation sent:", invitation);
-        const incomingInvitaionPayload = {
-          groupChatId: invitation.group_chat_id,
-          inviterId: invitation.inviter_id,
-          recipientId: invitation.recipient_id,
-          inviteReason: invitation.invite_reason,
-        };
-        socket.emit("incoming-invitation", incomingInvitaionPayload);
-      });
+      socket.emit("incoming-invitation", invitationPayload);
     }
+
+    console.log("[Create group chat modal] Sent invitations");
   };
 
   // * [Func] Handle finding users
@@ -125,8 +104,6 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
     if (!usernameList) {
       return;
     }
-
-    console.log("usernameList:", usernameList);
 
     const usernamesArr = usernameList
       .split(",")
@@ -161,12 +138,11 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
         );
       }
     }
-    console.log("founded:", foundUsers);
   };
 
   // * [Func] Handle close button
   const handleCloseButton = () => {
-    console.log("Executed handleCloseButton");
+    console.log("[Create group chat modal] Executed handleCloseButton");
     setGroupChatName("");
     setDescription("");
     setUsernames("");

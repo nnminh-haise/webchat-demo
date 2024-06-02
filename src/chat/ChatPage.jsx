@@ -4,6 +4,7 @@ import "./ChatPage.css";
 import io from "socket.io-client";
 import axios from "axios";
 import CreateGroupChatModal from "./modals/CreateGroupChat";
+import SentInvitationsModal from "./modals/SentInvitation";
 
 /**
  * TODO: implement disconnect socket server when user leave chat page
@@ -13,7 +14,13 @@ import CreateGroupChatModal from "./modals/CreateGroupChat";
 const BACKEND_SERVER_URL = "http://localhost:8081";
 const FETCH_USER_PROFILE = `${BACKEND_SERVER_URL}/api/v1/users/me`;
 const FETCH_CONVERSATIONS_URL = `${BACKEND_SERVER_URL}/api/v1/user-to-groups/groups`;
-const FETCH_SENT_INVITATIONS_URL = `${BACKEND_SERVER_URL}/api/v1/sent-invitations`;
+const FETCH_SENT_INVITAIONS_URL = `${BACKEND_SERVER_URL}/api/v1/invitations/sent`;
+
+const notificationSocket = io(BACKEND_SERVER_URL, {
+  auth: {
+    Bearer: localStorage.getItem("accessToken"),
+  },
+});
 
 let socket = null;
 
@@ -30,6 +37,20 @@ const connectToSocket = (accessToken) => {
     auth: {
       Bearer: getAccessToken(),
     },
+  });
+};
+
+const joinPrivateRoom = (userId) => {
+  if (!notificationSocket) {
+    console.error("Notification Socket is not connected");
+    return;
+  }
+  notificationSocket.emit("join-private-room", userId, (response) => {
+    if (response.error) {
+      console.error("Failed to join private room:", response.error);
+    } else {
+      console.log("Joined private room successfully");
+    }
   });
 };
 
@@ -81,7 +102,8 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
   const [showCreateChatModal, setShowCreateChatModal] = useState(false);
-  const [newGroupChatCreated, setNewGroupChatCreated] = useState(false);
+  const [showSentInvitationsModal, setShowSentInvitationsModal] =
+    useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -102,6 +124,7 @@ const ChatPage = () => {
           },
         });
         setCurrentUser(response.data);
+        joinPrivateRoom(currentUser._id);
         localStorage.setItem("userId", response.data._id);
       } catch (error) {
         if (error.response && error.response.status === 401) {
@@ -218,8 +241,36 @@ const ChatPage = () => {
     };
   }, []);
 
+  // * [Hook] Listening to the receive-invitation event
+  useEffect(() => {
+    console.log("[Hook of receive-invitation] Activated");
+
+    const handleReceiveInvitation = (invitation) => {
+      console.log("receive-invitation:", invitation);
+    };
+
+    if (notificationSocket && currentUser) {
+      console.log(
+        "[Hook of receive-invitation] Socket is connected and user is available"
+      );
+      joinPrivateRoom(currentUser._id);
+      notificationSocket.on("receive-invitation", handleReceiveInvitation);
+    } else {
+      console.log(
+        "[Hook of receive-invitation] Socket or current user is not available"
+      );
+    }
+
+    return () => {
+      if (notificationSocket) {
+        notificationSocket.off("receive-invitation", handleReceiveInvitation);
+      }
+    };
+  }, [notificationSocket, currentUser]);
+
   // * [Func] Handle conversation selection event
   const handleConversationClick = (conversation) => {
+    // console.log("[handleConversationClick] Conversation:", conversation);
     if (currentConversation && conversation._id === currentConversation._id) {
       return;
     }
@@ -271,6 +322,23 @@ const ChatPage = () => {
     setMessageInput("");
   };
 
+  const handleFetchSentInvitaionsEvent = async () => {
+    console.log("[handleFetchSentInvitaionsEvent] Fetching sent invitations");
+    try {
+      const response = await axios.get(FETCH_SENT_INVITAIONS_URL, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status >= 401) {
+        console.error("Error fetching sent invitations:", error.response.data);
+      }
+      return null;
+    }
+  };
+
   return (
     <div className="chat-page-container">
       <div className="user-section">
@@ -305,7 +373,19 @@ const ChatPage = () => {
                 <p>This is the modal content!</p>
               </CreateGroupChatModal>
               <button className="notification-btn">Notifications</button>
-              <button className="sent-invitaion-btn">Sent Invitations</button>
+              <button
+                className="sent-invitaion-btn"
+                onClick={() => {
+                  setShowSentInvitationsModal(true);
+                }}
+              >
+                Sent Invitations
+              </button>
+              <SentInvitationsModal
+                show={showSentInvitationsModal}
+                onClose={() => setShowSentInvitationsModal(false)}
+                onFetchSentInvitations={handleFetchSentInvitaionsEvent}
+              ></SentInvitationsModal>
               <button className="received-invitaion-btn">
                 Received Invitations
               </button>
