@@ -182,7 +182,6 @@ const ChatPage = () => {
 
   // * [Func] Handle conversation selection event
   const handleConversationClick = (conversation) => {
-    console.log("[handleConversationClick] Conversation:", conversation);
     if (currentConversation && conversation._id === currentConversation._id) {
       return;
     }
@@ -203,7 +202,6 @@ const ChatPage = () => {
       return;
     }
     socket.on("receive-message", (message) => {
-      console.log("[receive-message] Message:", message);
       setMessages((prevMessages) => [...prevMessages, message]);
     });
   }, [socket]);
@@ -228,6 +226,17 @@ const ChatPage = () => {
     );
     setMessageInput("");
   };
+
+  // * [Hook] Notification server hook
+  useEffect(() => {
+    if (!notificationSocket) {
+      return;
+    }
+
+    notificationSocket.on("new-invitation", (invitation) => {
+      console.log("[notificationSocket] New invitation:", invitation);
+    });
+  }, [notificationSocket]);
 
   // * [Func] Fetch sent invitations
   const fetchSentInvitations = async () => {

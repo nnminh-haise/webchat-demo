@@ -30,6 +30,34 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
   const [foundUsers, setFoundUsers] = useState(new Map());
   const [invitingUsers, setInvitingUsers] = useState([]);
 
+  // * [Func] Handle sent invitation
+  const handleSentInvitation = (groupChat) => {
+    if (
+      !invitingUsers ||
+      invitingUsers.length === 0 ||
+      !groupChat ||
+      !invitationReason
+    ) {
+      return;
+    }
+
+    for (const user of invitingUsers) {
+      const invitationPayload = {
+        inviterId: localStorage.getItem("userId"),
+        recipientId: user._id,
+        groupChatId: groupChat._id,
+        inviteReason: invitationReason,
+      };
+      console.log(
+        "[Create group chat modal] Sending invitations",
+        invitationPayload
+      );
+      socket.emit("incoming-invitation", invitationPayload);
+    }
+
+    console.log("[Create group chat modal] Sent invitations");
+  };
+
   // * [Func] Handle create group chat event
   const handleCreateGroupChatEvent = () => {
     if (!groupChatName) {
@@ -73,30 +101,6 @@ const CreateGroupChatModal = ({ show, handleClose, onNewGroupChatCreated }) => {
 
     // TODO: try to avoid using setTimeout
     setTimeout(() => handleCloseButton(), 200);
-  };
-
-  // * [Func] Handle sent invitation
-  const handleSentInvitation = (groupChat) => {
-    if (
-      !invitingUsers ||
-      invitingUsers.length === 0 ||
-      !groupChat ||
-      !invitationReason
-    ) {
-      return;
-    }
-
-    for (const user of invitingUsers) {
-      const invitationPayload = {
-        inviterId: localStorage.getItem("userId"),
-        recipientId: user._id,
-        groupChatId: groupChat._id,
-        inviteReason: invitationReason,
-      };
-      socket.emit("incoming-invitation", invitationPayload);
-    }
-
-    console.log("[Create group chat modal] Sent invitations");
   };
 
   // * [Func] Handle finding users
