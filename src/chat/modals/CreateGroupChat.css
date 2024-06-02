@@ -23,3 +23,61 @@
 .display-none {
   display: none;
 }
+
+.result-tabs {
+  display: flex;
+  justify-content: space-between; /* Distribute space between buttons */
+  margin-top: 20px;
+}
+
+.result-tabs button {
+  flex: 1; /* Make buttons take equal space */
+  margin: 0 5px; /* Add margin to create space between buttons */
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.result-tabs button:hover {
+  background-color: #0056b3;
+}
+
+.result-contents {
+  margin-top: 20px;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.option-btns {
+  display: flex;
+  justify-content: space-between; /* Distribute space between buttons */
+  margin-top: 20px;
+}
+
+.option-btns button {
+  flex: 1; /* Make buttons take equal space */
+  margin: 0 5px; /* Add margin to create space between buttons */
+  padding: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.option-btns button:hover {
+  background-color: #218838;
+}
+
+.create-group-chat-result {
+  margin-top: 10px;
+}

@@ -19,16 +19,20 @@ const FETCH_CONVERSATIONS_URL = `${BACKEND_SERVER_URL}/api/v1/user-to-groups/gro
 const FETCH_SENT_INVITAIONS_URL = `${BACKEND_SERVER_URL}/api/v1/invitations/sent`;
 const FETCH_RECEIVED_INVITAIONS_URL = `${BACKEND_SERVER_URL}/api/v1/invitations/received`;
 
-const notificationSocket = io(BACKEND_SERVER_URL, {
-  auth: {
-    Bearer: localStorage.getItem("accessToken"),
-  },
-});
+let notificationSocket = null;
 
 let socket = null;
 
 const getAccessToken = () => {
   return localStorage.getItem("accessToken");
+};
+
+const connectToNotificationServer = (accessToken) => {
+  notificationSocket = io(BACKEND_SERVER_URL, {
+    auth: {
+      Bearer: accessToken,
+    },
+  });
 };
 
 const connectToSocket = (accessToken) => {
@@ -130,6 +134,7 @@ const ChatPage = () => {
 
       localStorage.setItem("userId", user._id);
       setCurrentUser(user);
+      connectToNotificationServer(getAccessToken());
     });
   }, []);
 
@@ -144,6 +149,7 @@ const ChatPage = () => {
 
         localStorage.setItem("userId", user._id);
         setCurrentUser(user);
+        connectToNotificationServer(getAccessToken());
       });
     };
     window.addEventListener("storage", handleStorageChange);
@@ -283,18 +289,21 @@ const ChatPage = () => {
 
   // * [Func] Handle sign-out event
   const handleSignOutEvent = () => {
-    if (
-      !currentConversation ||
-      localStorage.getItem("currentConversation") === null
-    ) {
-      localStorage.removeItem("accessToken");
-      navigate("/");
-      return;
-    }
+    // if (
+    //   !currentConversation ||
+    //   localStorage.getItem("currentConversation") === null
+    // ) {
+    //   localStorage.removeItem("accessToken");
+    //   navigate("/");
+    //   return;
+    // }
 
     localStorage.removeItem("accessToken");
     localStorage.removeItem("currentConversation");
-    leaveRoom(currentConversation.groupChatId._id, currentUser._id);
+    if (currentConversation && currentUser) {
+      leaveRoom(currentConversation.groupChatId._id, currentUser._id);
+    }
+    notificationSocket.disconnect();
     navigate("/");
   };
 
@@ -371,6 +380,7 @@ const ChatPage = () => {
                 onNewGroupChatCreated={() => {
                   setNewGroupChatCreated(true);
                 }}
+                notificationSocket={notificationSocket}
               >
                 <p>This is the modal content!</p>
               </CreateGroupChatModal>
